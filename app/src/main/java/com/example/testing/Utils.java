@@ -1,6 +1,10 @@
 package com.example.testing;
 
+import android.content.ContentResolver;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Environment;
+import android.provider.CalendarContract;
 import android.util.Log;
 
 import com.android.volley.AuthFailureError;
@@ -8,17 +12,22 @@ import com.android.volley.RequestQueue;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -93,5 +102,57 @@ public class Utils {
         allWords.removeAll(STOPWORDS);
 
        return allWords.stream().collect(Collectors.joining(" "));
+    }
+
+    public static String getCalendars(ContentResolver contentResolver, String eventTitle){
+   String[] FIELDS = {
+                CalendarContract.Events.CALENDAR_ID,
+                CalendarContract.Events.TITLE,
+                CalendarContract.Events.DESCRIPTION,
+                CalendarContract.Events.DTSTART,
+                CalendarContract.Events.DTEND
+        };
+        System.out.println("eventTitle###################: " + eventTitle);
+        final Uri CALENDAR_URI = Uri.parse("content://com.android.calendar/calendars");
+        Set<String> calendars = new HashSet<String>();
+        Calendar startTime = Calendar.getInstance();
+
+        startTime.set(Calendar.HOUR_OF_DAY,0);
+        startTime.set(Calendar.MINUTE,0);
+        startTime.set(Calendar.SECOND, 0);
+
+        Calendar endTime= Calendar.getInstance();
+        endTime.add(Calendar.DATE, 30);
+
+        String selection = "(( " + CalendarContract.Events.DTSTART + " >= " + startTime.getTimeInMillis() + " )" +
+                " AND ( " + CalendarContract.Events.TITLE + " == '" + eventTitle + "' )" +
+                " AND ( " + CalendarContract.Events.DTEND + " <= " + endTime.getTimeInMillis() + " ) AND ( deleted != 1 ))";
+
+        Cursor cursor = contentResolver.query(CalendarContract.Events.CONTENT_URI, FIELDS, selection, null, CalendarContract.Events.DTSTART + " ASC");
+
+        List<String> events = new ArrayList<>();
+        String eventsDate = StringUtils.EMPTY;
+        if (cursor!=null && cursor.getCount()>0 && cursor.moveToFirst()) {
+            do{
+                String str1 = cursor.getString(1);
+                System.out.println("str1: " + str1);
+
+                Long appointmentDate = cursor.getLong(3);
+                System.out.println("appointmentDate:******************************************* " + getDate(appointmentDate));
+                eventsDate = StringUtils.isAllEmpty(eventsDate) ?  getDate(appointmentDate) : eventsDate + " and " +  getDate(appointmentDate);
+                events.add(str1);
+            } while ( cursor.moveToNext());
+        }
+        System.out.println("eventsDate :******************************************* " +eventsDate);
+
+        return eventsDate;
+    }
+
+    public static String getDate(long milliSeconds) {
+        SimpleDateFormat formatter = new SimpleDateFormat(
+                "EEE, d MMM yyyy HH:mm:ss");
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(milliSeconds);
+        return formatter.format(calendar.getTime());
     }
 }

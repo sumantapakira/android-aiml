@@ -1,17 +1,21 @@
 package com.example.testing;
 
+import android.Manifest;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
+import android.content.ContentResolver;
+import android.content.Context;
 import android.content.Intent;
-import android.content.res.AssetManager;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.speech.tts.TextToSpeech;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.SeekBar;
@@ -20,120 +24,96 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-import com.android.volley.Request;
 import com.android.volley.RequestQueue;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GetTokenResult;
 
-import org.alicebot.ab.AIMLProcessor;
-import org.alicebot.ab.Bot;
-import org.alicebot.ab.Chat;
-import org.alicebot.ab.Graphmaster;
-import org.alicebot.ab.MagicBooleans;
-import org.alicebot.ab.MagicStrings;
-import org.alicebot.ab.PCAIMLProcessorExtension;
+import org.apache.commons.lang3.StringUtils;
+import org.sumantapakira.aiml.Category;
+import org.sumantapakira.aiml.Response;
+import org.sumantapakira.aiml.dto.FutureDTO;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
 import java.util.Locale;
-import java.util.StringTokenizer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final String TAG = "MainActivity";
     private final int REQ_CODE = 100;
     TextView textView;
-    Chat chat;
+    TextView robotView;
+    org.sumantapakira.aiml.Chat chatSession;
     private TextToSpeech mTTS;
     private EditText mEditText;
     private SeekBar mSeekBarPitch;
     private SeekBar mSeekBarSpeed;
-    private Button mButtonSpeak;
+    // private Button mButtonSpeak;
     private FirebaseAuth firebaseAuth;
     private FirebaseAuth.AuthStateListener fireAuthListener;
     private String idToken;
+    private static String FIREBASE_UL = "https://chatbot-12d2b-default-rtdb.firebaseio.com/.json";
+    ProgressDialog pd;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        checkPermission(42, Manifest.permission.READ_CALENDAR, Manifest.permission.WRITE_CALENDAR);
+        checkPermission(43, Manifest.permission.SET_ALARM, Manifest.permission.SET_ALARM);
         setContentView(R.layout.activity_main);
 
+        AlarmManager objAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Calendar objCalendar = Calendar.getInstance();
+        objCalendar.set(Calendar.YEAR, 2021);
+        //objCalendar.set(Calendar.YEAR, objCalendar.get(Calendar.YEAR));
+        objCalendar.set(Calendar.MONTH, 7);
+        objCalendar.set(Calendar.DAY_OF_MONTH, 25);
+        objCalendar.set(Calendar.HOUR_OF_DAY, 15);
+        objCalendar.set(Calendar.MINUTE, 20);
+        objCalendar.set(Calendar.SECOND, 0);
+        objCalendar.set(Calendar.MILLISECOND, 0);
+        objCalendar.set(Calendar.AM_PM, Calendar.PM);
+
+        Intent alamShowIntent = new Intent(this,MainActivity.class);
+        PendingIntent alarmPendingIntent = PendingIntent.getActivity(this, 0,alamShowIntent,0 );
+
+        objAlarmManager.set(AlarmManager.RTC_WAKEUP,objCalendar.getTimeInMillis(), alarmPendingIntent);
+
+
+
         firebaseAuth = FirebaseAuth.getInstance();
-
-        //get current user
         final FirebaseUser user = firebaseAuth.getCurrentUser();
-        Log.d(TAG, " user : " + user.getEmail());
-        Log.d(TAG, " user : " + user.getDisplayName());
-
-        AsyncTask.execute(new Runnable() {
-            @Override
-            public void run() {
-                File yantraFile = getExternalFilesDir("/aem/bots/yantra");
-                AssetManager assets = getApplicationContext().getAssets();
-
-                try {
-                    System.out.println("yantraFile.exists() : "+yantraFile.exists());
-                    if (yantraFile.exists()) {
-                       // boolean isDeleted = yantraFile.delete();
-                       // System.out.println("isDeleted : "+isDeleted);
-                       // yantraFile = getExternalFilesDir("/aem/bots/yantra");
-                        for (String dir : assets.list("yantra")) {
-                            String path1 = "yantra/" + dir;
-                            for (String file : assets.list(path1)) {
-
-                                String path2 = yantraFile.getPath() + "/" + dir + "/" + file;
-
-                                File f = new File(yantraFile.getPath() + "/" + dir);
-                                f.mkdirs();
-                                if (f.exists()) {
-                                    File f2 = new File(f.getPath() + "/" + file);
-                                    f2.createNewFile();
-                                    InputStream in = null;
-                                    OutputStream out = null;
-                                    in = assets.open("yantra/" + dir + "/" + file);
-                                    out = new FileOutputStream(f2.getPath());
-                                    //copy file from assets to the mobile's SD card or any secondary memory
-                                    Utils.copyFile(in, out);
-                                    in.close();
-                                    in = null;
-                                    out.flush();
-                                    out.close();
-                                    out = null;
-                                }
-
-                            }
-                        }
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-                MagicStrings.root_path = getExternalFilesDir("/aem").getPath();
-                System.out.println("Working Directory = " + MagicStrings.root_path);
-                AIMLProcessor.extension = new PCAIMLProcessorExtension();
-
-                Bot bot = new Bot("yantra", MagicStrings.root_path, "chat");
-                chat = new Chat(bot);
-            }
-        });
-
-
-        final RequestQueue queue = Volley.newRequestQueue(this);
+       try {
+            new JsonTask().execute(FIREBASE_UL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+         final RequestQueue queue = Volley.newRequestQueue(this);
         user.getIdToken(true)
                 .addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
                     public void onComplete(@NonNull Task<GetTokenResult> task) {
                         if (task.isSuccessful()) {
-                             idToken = task.getResult().getToken();
+                            idToken = task.getResult().getToken();
                             Utils.callApi(0, "http://192.168.178.21:4202/bin/servlet/fetchcontent", queue, idToken);
 
                         } else {
@@ -142,24 +122,18 @@ public class MainActivity extends AppCompatActivity {
                     }
                 });
 
-
         fireAuthListener = new FirebaseAuth.AuthStateListener() {
             @Override
             public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
-                // FirebaseUser user1 = firebaseAuth.getCurrentUser();
-
                 if (user == null) {
-                    //user not login
                     MainActivity.this.startActivity(new Intent(MainActivity.this, LoginActivity.class));
                     MainActivity.this.finish();
                 }
             }
         };
 
-
-        mButtonSpeak = findViewById(R.id.button_speak);
-
         textView = findViewById(R.id.displaytext);
+        robotView = findViewById(R.id.robottext);
 
         ImageView speak = findViewById(R.id.speak);
         speak.setOnClickListener(new View.OnClickListener() {
@@ -181,7 +155,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         final String personalizedText = "Welcome " + user.getEmail() + " !, My name is Yantra. What can I do for you?";
-
         mTTS = new TextToSpeech(this, new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
@@ -193,29 +166,21 @@ public class MainActivity extends AppCompatActivity {
                         Log.e("TTS", "Language not supported");
                     } else {
                         speak(personalizedText);
-                        mButtonSpeak.setEnabled(true);
+                        // mButtonSpeak.setEnabled(true);
                     }
                 } else {
                     Log.e("TTS", "Initialization failed");
                 }
             }
         });
-
-
         mEditText = findViewById(R.id.edit_text);
         mSeekBarPitch = findViewById(R.id.seek_bar_pitch);
         mSeekBarSpeed = findViewById(R.id.seek_bar_speed);
-
-        mButtonSpeak.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Log.d(TAG, " onClick : ");
-                speak(personalizedText);
-            }
-        });
     }
-
     private void speak(String personalizedText) {
+        if (personalizedText.startsWith("http")) {
+            return;
+        }
         float pitch = (float) mSeekBarPitch.getProgress() / 50;
         if (pitch < 0.1) pitch = 0.1f;
         float speed = (float) mSeekBarSpeed.getProgress() / 50;
@@ -223,6 +188,7 @@ public class MainActivity extends AppCompatActivity {
 
         mTTS.setPitch(pitch);
         mTTS.setSpeechRate(speed);
+        robotView.setText("Yantra: " + personalizedText);
 
         mTTS.speak(personalizedText, TextToSpeech.QUEUE_FLUSH, null);
     }
@@ -247,135 +213,137 @@ public class MainActivity extends AppCompatActivity {
                     ArrayList result = data
                             .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
                     Log.d(TAG, result.get(0).toString());
-                    textView.setText(result.get(0).toString());
-                    String replyText = null;
+                    textView.setText("Me: " + result.get(0).toString());
+                    ExecutorService service = null;
+                    try {
+                        service = Executors.newCachedThreadPool();
+                        Response response = chatSession.multisentenceRespond(result.get(0).toString(), service);
+                        String yantraResponse = StringUtils.EMPTY;
 
-                    MagicBooleans.trace_mode = false;
-                    System.out.println("trace mode = " + MagicBooleans.trace_mode);
-                    Graphmaster.enableShortCuts = true;
-                    String filteredStopWords = Utils.removeStopWords(result.get(0).toString());
-                    String response = chat.multisentenceRespond(filteredStopWords);
-
-                    System.out.println("Robot Response : " + response);
-                    replyText = response;
-
-                    if (response.contains("hello")) {
-                        replyText = response;
-                        // callFirebaseAPI();
-                    } else if (result.get(0).toString().contains("reject")) {
-                        replyText = "Seems you are not in a good mood today";
-                        // call AEM servlet
-                        // scheduleWorkItem(String userName, String itemId, String time, String decision);
-                    } else if (result.get(0).toString().contains("open")) {
-
-                        String authorization = "admin" + ":" + "admin";
-                        String authorizationBase64 = Base64.encodeToString(authorization.getBytes(), Base64.NO_WRAP);
-
-                        /*Bundle bundle = new Bundle();
-                        bundle.putString("Authorization", "Basic " + authorizationBase64);
-                        browserIntent.putExtra(Browser.EXTRA_HEADERS, bundle);
-                        startActivity(browserIntent);*/
-
-                        final Bundle bundle = new Bundle();
-
-                        FirebaseUser mUser = FirebaseAuth.getInstance().getCurrentUser();
-                        mUser.getIdToken(true)
-                                .addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
-                                    public void onComplete(@NonNull Task<GetTokenResult> task) {
-                                        if (task.isSuccessful()) {
-                                            StringBuilder url = new StringBuilder("http://192.168.178.21:4202/content/we-retail/language-masters/en.html?wcmmode=disabled");
-
-
-                                            String idToken = task.getResult().getToken();
-                                            url.append("&");
-                                            url.append("token");
-                                            url.append("=");
-                                            url.append(idToken);
-                                            final Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
-
-                                           /* Log.d(TAG, " idToken : " +idToken );
-                                            bundle.putString("Authorization", "Bearer " + idToken);
-                                            browserIntent.putExtra(Browser.EXTRA_HEADERS, bundle);*/
-                                            startActivity(browserIntent);
-
-                                            // ...
-                                        } else {
-                                            // Handle error -> task.getException();
-                                        }
-                                    }
-                                });
-
-
-                    } else if (response.startsWith("Thanks! Your page named")) {
-                        StringTokenizer t = new StringTokenizer(response);
-                        String word ="";
-                        String title="";
-                        String jcrPath="";
-                        String templateType="";
-                        String prev ="";
-                        while(t.hasMoreTokens())
-                        {
-                            word = t.nextToken();
-
-                            if(prev.equals("named")){
-                                title = word;
+                        if (response != null && response.getAsyncResult() != null) {
+                            while (!response.getAsyncResult().isDone()) {
+                                yantraResponse = response.getResponse();
+                                speak(response.getResponse());
+                                Thread.sleep(3000);
                             }
-                            else if(prev.equals("type")){
-                                templateType = word;
-                            } else if(prev.equals("location")){
-                                jcrPath = word;
+                            if (response.getAsyncResult().isDone()) {
+                                final ObjectNode node = new ObjectMapper().readValue(response.getAsyncResult().get(), ObjectNode.class);
+                                String asyncVoice = response.getAsyncVoice() + " " + node.get(response.getResultkey()).asText();
+                                yantraResponse = asyncVoice;
+                                Thread.sleep(3000);
+                                speak(asyncVoice);
                             }
-
-                            prev = word;
+                       } else {
+                             if (response.getBrowserResponse() != null) {
+                                speak(response.getBrowserResponse());
+                                final Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(response.getResponse()));
+                                startActivity(browserIntent);
+                            }
+                            speak(response.getResponse());
+                            System.out.println("2222  : " + response.getResponse());
+                             if(StringUtils.isNotBlank(response.getCalendarEventTitle())){
+                                 Thread.sleep(1000);
+                                 ContentResolver contentResolver  = getContentResolver();
+                                 speak(Utils.getCalendars(contentResolver, response.getCalendarEventTitle()));
+                             }
                         }
-
-                    } else if (result.get(0).toString().contains("later") || result.get(0).toString().contains("schedule")) {
-                        replyText = "What time would like to schedule?";
-                    } else {
-                        replyText = response;
+                        if (response.getDependson() != null) {
+                            while (!response.getDependson().isDone()) {
+                                Thread.sleep(3000);
+                            }
+                            FutureDTO futureDTO = response.getDependson().get();
+                            final ObjectNode node = new ObjectMapper().readValue(response.getDependson().get().getResponse(), ObjectNode.class);
+                            yantraResponse = futureDTO.getAsyncVoice() + " " + node.get(futureDTO.getResultKey()).asText();
+                           speak(yantraResponse);
+                        }
+                        //System.out.println("Yantra : " +yantraResponse);
+                    } catch (Exception ex) {
+                        speak("Something went wrong, Please ask me another question!");
+                        ex.printStackTrace();
+                    } finally {
+                        service.shutdown();
                     }
 
-                    float pitch = (float) mSeekBarPitch.getProgress() / 50;
-                    if (pitch < 0.1) pitch = 0.1f;
-                    float speed = (float) mSeekBarSpeed.getProgress() / 50;
-                    if (speed < 0.1) speed = 0.1f;
 
-                    mTTS.setPitch(pitch);
-                    mTTS.setSpeechRate(speed);
-
-                    mTTS.speak(replyText, TextToSpeech.QUEUE_FLUSH, null);
                 }
                 break;
             }
         }
     }
 
-    private void callFirebaseAPI() {
-        Log.d(TAG, "*******************Calling api***************************");
-       /* RequestParams params = new RequestParams();
-        AsyncHttpClient client = new AsyncHttpClient();
-        client.get("https://us-central1-aem-voice.cloudfunctions.net/processRequest", params, new JsonHttpResponseHandler());*/
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String url = "https://www.google.com";
 
-// Request a string response from the provided URL.
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
-                new com.android.volley.Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        // Display the first 500 characters of the response string.
-                        Log.d(TAG, "Response is: " + response.substring(0, 500));
+    private class JsonTask extends AsyncTask<String, String, String> {
+
+        protected void onPreExecute() {
+            super.onPreExecute();
+            pd = new ProgressDialog(MainActivity.this);
+            pd.setMessage("Please wait");
+            pd.setCancelable(false);
+            pd.show();
+        }
+
+        protected String doInBackground(String... params) {
+           HttpURLConnection connection = null;
+            BufferedReader reader = null;
+          try {
+                URL url = new URL(params[0]);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.connect();
+               InputStream stream = connection.getInputStream();
+               reader = new BufferedReader(new InputStreamReader(stream));
+                StringBuffer buffer = new StringBuffer();
+                String line = "";
+                while ((line = reader.readLine()) != null) {
+                    buffer.append(line + "\n");
+                    Log.d("Response: ", "> " + line);   //here u ll get whole response...... :-)
+
+                }
+                return buffer.toString();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
+                try {
+                    if (reader != null) {
+                        reader.close();
                     }
-                }, new com.android.volley.Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.d(TAG, "Did not work");
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-        });
+            return null;
+        }
 
-// Add the request to the RequestQueue.
-        queue.add(stringRequest);
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+            if (pd.isShowing()) {
+                pd.dismiss();
+            }
+            try {
+                ArrayList<Category> listCategories = new ObjectMapper().readValue(result, new TypeReference<List<Category>>() {
+                });
+              org.sumantapakira.aiml.Bot bot = new org.sumantapakira.aiml.Bot("bot", org.sumantapakira.aiml.MagicStrings.root_path, "chat", listCategories);
+                chatSession = new org.sumantapakira.aiml.Chat(bot);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
+    private void checkPermission(int callbackId, String... permissionsId) {
+        boolean permissions = true;
+        for (String p : permissionsId) {
+            permissions = permissions && ContextCompat.checkSelfPermission(this, p) == PackageManager.PERMISSION_GRANTED;
+        }
+
+        if (!permissions)
+            ActivityCompat.requestPermissions(this, permissionsId, callbackId);
+        System.out.println("checkPermission  : " + permissions);
+    }
 
 }
