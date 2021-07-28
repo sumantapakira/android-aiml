@@ -40,6 +40,7 @@ import com.google.firebase.auth.GetTokenResult;
 
 import org.apache.commons.lang3.StringUtils;
 import org.sumantapakira.aiml.Category;
+import org.sumantapakira.aiml.History;
 import org.sumantapakira.aiml.Response;
 import org.sumantapakira.aiml.dto.FutureDTO;
 
@@ -235,12 +236,37 @@ public class MainActivity extends AppCompatActivity {
                             }
                        } else {
                              if (response.getBrowserResponse() != null) {
+                                 System.out.println("browser ::: "+response.getBrowserResponse());
                                 speak(response.getBrowserResponse());
+                                 System.out.println("normal res ::: "+response.getResponse());
+                                if(response.getResponse().startsWith("http://192")){
+                                    FirebaseUser mUser = FirebaseAuth.getInstance().getCurrentUser();
+                                    System.out.println("mUser ::: "+mUser.getEmail());
+                                    mUser.getIdToken(true)
+                                            .addOnCompleteListener(new OnCompleteListener<GetTokenResult>() {
+                                                public void onComplete(@NonNull Task<GetTokenResult> task) {
+                                                    if (task.isSuccessful()) {
+                                                        StringBuilder url = new StringBuilder(response.getResponse());
+                                                        String idToken = task.getResult().getToken();
+                                                        System.out.println("idToken ::: "+idToken);
+                                                        url.append("?");
+                                                        url.append("token");
+                                                        url.append("=");
+                                                        url.append(idToken);
+                                                        final Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url.toString()));
+                                                        System.out.println("url.toString() ::: "+url.toString());
+                                                        startActivity(browserIntent);
+                                                    } else {
+                                                        // Handle error -> task.getException();
+                                                    }
+                                                }
+                                            });
+                                }else{
                                 final Intent browserIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(response.getResponse()));
                                 startActivity(browserIntent);
+                                }
                             }
                             speak(response.getResponse());
-                            System.out.println("2222  : " + response.getResponse());
                              if(StringUtils.isNotBlank(response.getCalendarEventTitle())){
                                  Thread.sleep(1000);
                                  ContentResolver contentResolver  = getContentResolver();
@@ -255,6 +281,10 @@ public class MainActivity extends AppCompatActivity {
                             final ObjectNode node = new ObjectMapper().readValue(response.getDependson().get().getResponse(), ObjectNode.class);
                             yantraResponse = futureDTO.getAsyncVoice() + " " + node.get(futureDTO.getResultKey()).asText();
                            speak(yantraResponse);
+
+                            History<String> hist = new History<String>();
+                            hist.add(node.get(futureDTO.getResultKey()).asText());
+                            chatSession.thatHistory.add(hist);
                         }
                         //System.out.println("Yantra : " +yantraResponse);
                     } catch (Exception ex) {
