@@ -342,7 +342,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 ArrayList<Category> listCategories = new ObjectMapper().readValue(result, new TypeReference<List<Category>>() {
                 });
-                org.sumantapakira.aiml.Bot bot = new org.sumantapakira.aiml.Bot("Yantra", org.sumantapakira.aiml.MagicStrings.root_path, "chat", listCategories);
+                org.sumantapakira.aiml.Bot bot = new org.sumantapakira.aiml.Bot("Yantra", "", "chat", listCategories);
                 chatBot = new org.sumantapakira.aiml.Chat(bot);
             } catch (Exception e) {
                 e.printStackTrace();
