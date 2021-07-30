@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private FirebaseAuth firebaseAuth;
     private FirebaseAuth.AuthStateListener fireAuthListener;
     private String idToken;
-    private static String FIREBASE_UL = "https://chatbot-12d2b-default-rtdb.firebaseio.com/.json";
+    private static String FIREBASE_UL = "https://your.firebaseio.com/.json";
     ProgressDialog pd;
 
     @Override
