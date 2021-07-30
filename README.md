@@ -50,6 +50,8 @@ you need to specify the endpoint in "api", "method" can be "GET/POST", "params" 
           }
         }
         
-"<repeat name='pagelocation'/>"  can be used to get the last response from the Bot and this value you can store in variable for another purpose.
+Repeat can be used to get the last response from the Bot and this value you can store in variable for another purpose.
+
+     "<repeat name='pagelocation'/>"  
 
 "random" is where you can define random text which Bot should speak.
