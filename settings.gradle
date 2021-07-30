@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name='Testing'
+rootProject.name='AI Chat Bot'

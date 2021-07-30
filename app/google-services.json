@@ -34,6 +34,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:10939425375:android:52cb56255ee6cd7d0bb1ea",
+        "android_client_info": {
+          "package_name": "org.sumanta.aichatbot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "10939425375-tti9et7eisalk39s9imfq2djr6vvm1mt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBL3h2LM3AHOfHinnRDOtghl5gnthiDM4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "10939425375-tti9et7eisalk39s9imfq2djr6vvm1mt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
