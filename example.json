@@ -1,0 +1,397 @@
+[ {
+  "pattern" : "I am good thanks",
+  "template" : {
+    "voice" : "great, what is your name? "
+  }
+},{
+  "pattern" : "I'm good thanks",
+  "template" : {
+    "voice" : "great, what is your name? "
+  }
+},{
+  "pattern" : "My name is *",
+  "template" : {
+    "voice" : "Hello, where do you live <star index = '1'/>? "
+  }
+}, {
+  "pattern" : "I live in * and * lives in *",
+  "template" : {
+    "think" : {
+      "set" : {
+        "name" : [ "address1", "name2", "address2" ]
+      }
+    },
+    "voice" : "Thank you for letting me know, Hope it is a nice day in {address1}<star/> and {address2}<star/>"
+  }
+}, {
+  "pattern" : "* lives in *",
+  "template" : {
+    "think" : {
+      "set" : {
+        "name" : [ "name2", "address2" ]
+      }
+    },
+    "voice" : "Thank you for letting me know, Hope it is a nice day in {address2}<star/>"
+  }
+}, {
+  "pattern" : "where do i live",
+  "template" : {
+    "voice" : "sure! You live in <get name='address1' />"
+  }
+}, {
+  "pattern" : "where does * live",
+  "template" : {
+    "voice" : "sure, <get name='name2' /> lives in <get name='address2' />"
+  }
+}, {
+  "pattern" : "location is under *",
+  "template" : {
+    "think" : {
+      "dependson" : "create a page",
+      "set" : {
+        "name" : [ "pagelocation" ]
+      }
+    },
+    "voice" : "ok, Your page location is {pagelocation}<star/>"
+  }
+}, {
+  "pattern" : "title is *",
+  "template" : {
+    "think" : {
+      "dependson" : "create a page",
+      "set" : {
+        "name" : [ "pagetitle" ]
+      }
+    },
+    "voice" : "ok, Page title is {pagetitle}<star/>"
+  }
+}, {
+  "pattern" : "template type will be *",
+  "template" : {
+    "think" : {
+      "dependson" : "create a page",
+      "set" : {
+        "name" : [ "templatetype" ]
+      }
+    },
+    "voice" : "all right, template type is {templatetype}<star/>"
+  }
+}, {
+  "pattern" : "what is location",
+  "template" : {
+    "voice" : "ok! Your page location <get name='pagelocation' />"
+  }
+}, {
+  "pattern" : "how are you",
+  "template" : {
+    "random" : [ "Nothing special, how about you", "Feeling good, thanks for asking, how about you", "Great, how is going?", "good afternoon, how are you doing?" ]
+  }
+}, {
+  "pattern" : "how many users are created",
+  "template" : {
+    "voice" : "Work in progress, ask me later"
+  }
+}, {
+  "pattern" : "how many pages are created",
+  "template" : {
+    "async" : {
+      "api" : "http://192.168.178.29:4502/bin/servlets/getpagecount.json",
+      "method" : "GET",
+      "resultkey" : "count",
+      "voice" : "The number of pages are "
+    },
+    "random" : [ "Let me find out", "Sure, let me help you" ]
+  }
+}, {
+  "pattern" : "I want to have a coffee",
+  "template" : {
+    "async" : {
+      "api" : "https://yourapi/coffeeprice",
+      "method" : "GET",
+      "params" : [ "sugarcount", "milkcount" ],
+      "resultkey" : "text",
+      "voice" : "Your coffee is ready, enjoy!"
+    },
+    "random" : [ "all right, Please tell me the how many spoon of sugar and milk", "How many spoon of sugar and milk would like to have" ]
+  }
+}, {
+  "pattern" : "* spoon of sugar",
+  "template" : {
+    "think" : {
+      "dependson" : "I want to have a coffee",
+      "set" : {
+        "name" : [ "sugarcount" ]
+      }
+    },
+    "voice" : "ok! sugar {sugarcount}<star/> spoon"
+  }
+}, {
+  "pattern" : "Milk * ml",
+  "template" : {
+    "think" : {
+      "dependson" : "I want to have a coffee",
+      "set" : {
+        "name" : [ "milkcount" ]
+      }
+    },
+    "voice" : "all right"
+  }
+}, {
+  "pattern" : "create a page",
+  "template" : {
+    "async" : {
+      "api" : "http://192.168.178.29:4502/bin/servlets/createpage.json",
+      "method" : "GET",
+      "params" : [ "pagetitle", "pagelocation", "templatetype" ],
+      "resultkey" : "path",
+      "voice" : "Page is created "
+    },
+    "random" : [ "Sure, Please tell me the location, page title and template type", "What will be the location, template type and title" ]
+  }
+},{
+  "pattern" : "create another page with title as * and location is under * and template type as *",
+  "template" : {
+    "async" : {
+      "api" : "http://192.168.178.29:4502/bin/servlets/createpage.json",
+      "method" : "GET",
+      "params" : [ "pagetitle", "pagelocation","templatetype"  ],
+      "resultkey" : "path",
+      "voice" : "Page is created"
+    },
+    "random" : [ "Sure, Please wait for a moment", "Thanks, let me do it! " ],
+    "think" : {
+      "set" : {
+        "name" : [ "pagetitle", "pagelocation", "templatetype" ]
+      }
+    }
+  }
+}, {
+  "pattern" : "create asset with title as * location *",
+  "template" : {
+    "async" : {
+      "api" : "https://jsonplaceholder.typicode.com/todos/1",
+      "method" : "GET",
+      "params" : [ "assetname", "assetloc" ],
+      "resultkey" : "title",
+      "voice" : "Page is created"
+    },
+    "random" : [ "Sure, Please wait for a moment", "Thanks, let me do it! " ],
+    "think" : {
+      "set" : {
+        "name" : [ "assetname", "assetloc" ]
+      }
+    }
+  }
+}, {
+  "pattern" : "what is the title",
+  "template" : {
+    "voice" : "The page title is <get name='pagetitle' /> and type is <get name='templatetype' />"
+  }
+}, {
+  "pattern" : "template type *",
+  "template" : {
+    "think" : {
+      "set" : {
+        "name" : [ "templatetype" ]
+      }
+    },
+    "voice" : "Thanks! Let me check {templatetype}<star/> "
+  }
+}, {
+  "pattern" : "What is the capital city of Germany",
+  "template" : {
+    "voice" : "Berlin, Would you like to know more about it?"
+  }
+}, {
+  "pattern" : "yes",
+  "template" : {
+    "browser" : "https://www.google.com/search?q=Berlin",
+    "voice" : "Here are some information"
+  },
+  "context" : "Berlin, Would you like to know more about it?"
+}, {
+  "pattern" : "no",
+  "template" : {
+    "voice" : "all right"
+  },
+  "context" : "Berlin, Would you like to know more about it?"
+}, {
+  "pattern" : "What is the capital city of India",
+  "template" : {
+    "voice" : "Delhi, Would you like to know more about it?"
+  }
+}, {
+  "pattern" : "yes",
+  "template" : {
+    "browser" : "https://www.google.com/search?q=Delhi",
+    "voice" : "Here you go "
+  },
+  "context" : "Delhi, Would you like to know more about it?"
+}, {
+  "pattern" : "How is the weather in *",
+  "template" : {
+    "async" : {
+      "api" : "https:/yourapi/fetchweatherdetails",
+      "method" : "GET",
+      "params" : [ "place" ],
+      "resultkey" : "response",
+      "voice" : "It looks like the "
+    },
+    "think" : {
+      "set" : {
+        "name" : [ "place" ]
+      }
+    },
+    "voice" : "Plase wait while I am checking"
+  }
+}, {
+  "pattern" : "How is the weather over there",
+  "template" : {
+    "condition" : {
+      "iffalse" : "Weather about what ",
+      "iftrue" : "How is the weather in <get name='q' /> ",
+      "name" : [ "q" ]
+    }
+  }
+}, {
+  "pattern" : "*",
+  "template" : {
+    "srai" : "How is the weather in <star/>"
+  },
+  "context" : "Weather about what"
+}, {
+  "pattern" : "Tell me about *",
+  "template" : {
+    "browser" : "https://www.google.com/search?q=<star index = '1' />",
+    "voice" : "Here are some information"
+  }
+}, {
+  "pattern" : "When is my *",
+  "template" : {
+    "voice" : "Your {eventtitle}<star/> is on following days",
+	"calendar": true,
+    "think" : {
+      "set" : {
+        "name" : [ "eventtitle" ]
+      }
+    }
+  }
+},{
+  "pattern" : "When is your birthday",
+  "template" : {
+    "voice" : "My birthday is on 1st August"
+  }
+},{
+  "pattern" : "Repeat please",
+  "template" : {
+    "voice" : "<repeat />"
+  }
+},{
+  "pattern" : "What did you say",
+  "template" : {
+    "voice" : "<repeat />"
+  }
+} ,{
+  "pattern" : "open it",
+  "template" : {
+    "browser" : "<repeat />",
+	 "voice" : "Sure"
+  }
+},{
+  "pattern" : "open it again",
+  "template" : {
+    "browser" : "<repeat />",
+	 "voice" : "Sure"
+  }
+},{
+  "pattern" : "Add * component",
+  "template" : {
+    "async" : {
+      "api" : "http://192.168.178.29:4502/bin/servlets/addcomponent.json",
+      "method" : "GET",
+      "params" : [ "componentname", "<repeat name='pagelocation'/>"  ],
+      "resultkey" : "path",
+      "voice" : "It is added to the page"
+    },
+    "random" : [ "Sure, moment please", "Please wait while I am doing this for you" ],
+	"think" : {
+      "set" : {
+        "name" : [ "componentname"]
+      }
+    }
+  }
+},{
+  "pattern" : "Activate",
+  "template" : {
+     "async" : {
+      "api" : "http://192.168.178.29:4502/bin/servlets/publishpage.json",
+	  "params" : ["<repeat name='pagelocation'/>"],
+      "method" : "GET",
+      "resultkey" : "path",
+      "voice" : "The page is now published"
+    }
+  }
+},{
+  "pattern" : "Publish this",
+  "template" : {
+     "async" : {
+      "api" : "http://192.168.178.29:4502/bin/servlets/publishpage.json",
+	  "params" : ["<repeat name='pagelocation'/>"],
+      "method" : "GET",
+      "resultkey" : "path",
+      "voice" : "The page is now published"
+    }
+  }
+},{
+  "pattern" : "How much is *",
+  "template" : {
+      "voice" : "<math index = '1' />"
+    }
+},{
+  "pattern" : "plus *",
+  "template" : {
+      "voice" : "<math index = '1' operation='+'/>"
+    }
+},{
+  "pattern" : "x *",
+  "template" : {
+      "voice" : "<math index = '1' operation='*'/>"
+    }
+},{
+  "pattern" : "Thanks",
+  "template" : {
+      "voice" : "You are welcome"
+    }
+},{
+  "pattern" : "When is the *",
+  "template" : {
+    "voice" : "Your {eventtitle}<star/> is on following days",
+	"calendar": true,
+    "think" : {
+      "set" : {
+        "name" : [ "eventtitle" ]
+      }
+    }
+  }
+},
+{
+  "pattern" : "Tell me a joke",
+  "template" : {
+      "voice" : "What is the defination of balanced diet?"
+    }
+},
+{
+  "pattern" : "what",
+  "template" : {
+      "voice" : "A beer in each hand"
+    },
+  "context":"What is the defination of balanced diet?" 	
+},
+{
+  "pattern" : "I don't know",
+  "template" : {
+      "voice" : "A beer in each hand"
+    },
+  "context":"What is the defination of balanced diet?" 	
+}    
+]
