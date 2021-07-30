@@ -1,4 +1,4 @@
-# Android AI Chatbot
+# AI Chatbot
 AIML speech for Android 
 
 Build your own chatbot using the library 
