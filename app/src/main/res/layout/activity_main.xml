@@ -40,13 +40,7 @@
         android:layout_marginBottom="16dp"
         android:progress="50" />
 
-    <Button
-        android:id="@+id/button_speak"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:enabled="false"
-        android:text="Say ittttt!" />
+
 
     <TextView
         android:id = "@+id/displaytext"
@@ -54,11 +48,17 @@
         android:layout_width = "wrap_content"
         android:layout_height = "wrap_content"/>
 
-    <ImageView
-        android:id = "@+id/speak"
+    <TextView
+        android:id = "@+id/robottext"
+        android:textSize = "30sp"
         android:layout_width = "wrap_content"
-        android:layout_height = "wrap_content"
-        android:background = "?selectableItemBackground"
-        android:src = "@android:drawable/ic_btn_speak_now"/>
+        android:layout_height = "wrap_content"/>
+
+    <ImageView
+        android:id="@+id/speak"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?selectableItemBackground"
+        android:src="@android:drawable/ic_btn_speak_now" />
 
 </LinearLayout>
