@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private final int REQ_CODE = 100;
     TextView textView;
     TextView robotView;
-    org.sumantapakira.aiml.Chat chatBot;
+    org.sumantapakira.aiml.AIChat aichatBot;
     private TextToSpeech mTTS;
     private EditText mEditText;
     private SeekBar mSeekBarPitch;
@@ -202,7 +202,7 @@ public class MainActivity extends AppCompatActivity {
                     ExecutorService service = null;
                     try {
                         service = Executors.newCachedThreadPool();
-                        Response response = chatBot.multisentenceRespond(result.get(0).toString(), service);
+                        Response response = aichatBot.respond(result.get(0).toString(), service);
                         String yantraResponse = StringUtils.EMPTY;
 
                         if (response != null && response.getAsyncResult() != null) {
@@ -218,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
                                 Thread.sleep(3000);
                                 History<String> history = new History<String>();
                                 history.add(node.get(response.getResultkey()).asText());
-                                chatBot.thatHistory.add(history);
+                                aichatBot.thatHistory.add(history);
                                 speak(asyncVoice);
                             }
                         } else {
@@ -255,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
                                 String androidresponse = Utils.getCalendars(contentResolver, response.getCalendarEventTitle());
                                 History<String> history = new History<String>();
                                 history.add(androidresponse);
-                                chatBot.thatHistory.add(history);
+                                aichatBot.thatHistory.add(history);
                                 speak(androidresponse);
                             }
                         }
@@ -270,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
 
                             History<String> history = new History<String>();
                             history.add(node.get(futureDTO.getResultKey()).asText());
-                            chatBot.thatHistory.add(history);
+                            aichatBot.thatHistory.add(history);
                         }
                     } catch (Exception ex) {
                         speak("Something went wrong, Please ask me another question!");
@@ -342,8 +342,8 @@ public class MainActivity extends AppCompatActivity {
             try {
                 ArrayList<Category> listCategories = new ObjectMapper().readValue(result, new TypeReference<List<Category>>() {
                 });
-                org.sumantapakira.aiml.Bot bot = new org.sumantapakira.aiml.Bot("Yantra", "", "chat", listCategories);
-                chatBot = new org.sumantapakira.aiml.Chat(bot);
+                org.sumantapakira.aiml.AIBot aibot = new org.sumantapakira.aiml.AIBot("Yantra", "", "chat", listCategories);
+                chatBot = new org.sumantapakira.aiml.Chat(aibot);
             } catch (Exception e) {
                 e.printStackTrace();
             }
